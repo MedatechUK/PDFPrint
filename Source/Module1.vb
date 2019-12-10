@@ -38,12 +38,12 @@ Module Module1
     End Property
 
     Enum myRunMode As Integer
-        file = 0
+        FILENAME = 0
         url = 1
         Config = 2
     End Enum
 
-    Dim FILE As String = Nothing
+    Dim FILENAME As String = Nothing
     Dim URL As String = Nothing
     Dim PRN As String = Nothing
     Dim isConsole As Boolean = True
@@ -55,7 +55,7 @@ Module Module1
         'MsgBox(Environment.CommandLine)
 
         With cApp
-            .RunMode = myRunMode.file
+            .RunMode = myRunMode.FILENAME
             .doWelcome(Assembly.GetExecutingAssembly())
             Try
                 .GetArgs(Command)
@@ -64,17 +64,17 @@ Module Module1
             End Try
 
             If Not .Quit Then
-                If IsNothing(FILE) And IsNothing(URL) Then
-                    Display("Neither a file nor a URL was specified. Please seek /help.")
+                If IsNothing(FILENAME) And IsNothing(URL) Then
+                    Display("Neither a FILENAME nor a URL was specified. Please seek /help.")
                     .Quit = True
-                ElseIf Not (IsNothing(FILE)) And Not (IsNothing(URL)) Then
-                    Display("Both a file AND a URL was specified. Please seek /help.")
+                ElseIf Not (IsNothing(FILENAME)) And Not (IsNothing(URL)) Then
+                    Display("Both a FILENAME AND a URL was specified. Please seek /help.")
                     .Quit = True
                 End If
 
                 If Not .Quit Then
                     Select Case .RunMode
-                        Case myRunMode.file
+                        Case myRunMode.FILENAME
                             If GetPrinter() Then
                                 Print()
                             End If
@@ -97,7 +97,7 @@ Module Module1
                             End If
                         Case myRunMode.Config
                             HostName = URL
-                            Display(String.Format("The default hostname has been set to [{0}]{1}You can now ommit the hostname from the URL parameter e.g. /u file.pdf", URL, vbCrLf))
+                            Display(String.Format("The default hostname has been set to [{0}]{1}You can now ommit the hostname from the URL parameter e.g. /u FILENAME.pdf", URL, vbCrLf))
                     End Select
                 End If
             End If
@@ -118,7 +118,7 @@ Module Module1
                         State = Nothing
                     Case "p", "prn", "printer"
                         State = "p"
-                    Case "f", "file"
+                    Case "f", "FILENAME"
                         State = "f"
                     Case "u", "url"
                         State = "u"
@@ -144,8 +144,8 @@ Module Module1
                     Case "p"
                         PRN = StrVal
                     Case "f"
-                        .RunMode = myRunMode.file
-                        FILE = StrVal
+                        .RunMode = myRunMode.FILENAME
+                        FILENAME = StrVal
                     Case "u"
                         If Not .RunMode = myRunMode.Config Then .RunMode = myRunMode.url
                         URL = StrVal
@@ -199,34 +199,37 @@ Module Module1
             Dim wc As New System.Net.WebClient
             Select Case URL.Split(".").Last.ToUpper
                 Case "PDF"
-                    FILE = String.Format( _
-                        "{0}\{1}.pdf", _
-                        Environment.GetFolderPath(Environment.SpecialFolder.InternetCache), _
-                        Guid.NewGuid.ToString _
+                    FILENAME = String.Format(
+                        "{0}\{1}.pdf",
+                        Environment.GetFolderPath(Environment.SpecialFolder.InternetCache),
+                        Guid.NewGuid.ToString
                     )
                 Case "HTML", "HTM"
-                    FILE = String.Format( _
-                        "{0}\{1}.html", _
-                        Environment.GetFolderPath(Environment.SpecialFolder.InternetCache), _
-                        Guid.NewGuid.ToString _
+                    FILENAME = String.Format(
+                        "{0}\{1}.html",
+                        Environment.GetFolderPath(Environment.SpecialFolder.InternetCache),
+                        Guid.NewGuid.ToString
                     )
             End Select
 
-            Console.WriteLine(String.Format("Saving file from [{0}] to [{1}].", URL, FILE))
-            wc.DownloadFile(URL, FILE)
+            Console.WriteLine(String.Format("Saving FILENAME from [{0}] to [{1}].", URL, FILENAME))
+            wc.DownloadFile(URL, FILENAME)
+            File.SetAttributes(FILENAME, File.GetAttributes(FILENAME) + FileAttribute.Archive)
+
             Return True
 
         Catch ex As Exception
-            Display(String.Format("Could not download file at URL: {0}{2}{1}", URL, ex.Message, vbCrLf))
+            Display(String.Format("Could not download FILENAME at URL: {0}{2}{1}", URL, ex.Message, vbCrLf))
             Return False
         End Try
+
     End Function
 
     Sub Print()
 
-        If Right(FILE, 3).ToUpper = "HTM" Or Right(FILE, 4).ToUpper = "HTML" Then
+        If Right(FILENAME, 3).ToUpper = "HTM" Or Right(FILENAME, 4).ToUpper = "HTML" Then
             Dim WB As New WebBrowser
-            WB.Navigate(FILE)
+            WB.Navigate(FILENAME)
             For i As Integer = 0 To 500
                 Application.DoEvents()
                 Threading.Thread.Sleep(10)
@@ -259,34 +262,34 @@ Module Module1
                 End If
             Loop Until acrorun = False Or resp = MsgBoxResult.Cancel
 
-        If resp = MsgBoxResult.Cancel Then
-            Console.WriteLine("Acrobat already running. User cancelled.")
-            Exit Sub
-        End If
+            If resp = MsgBoxResult.Cancel Then
+                Console.WriteLine("Acrobat already running. User cancelled.")
+                Exit Sub
+            End If
 
-        Using myProcess As System.Diagnostics.Process = New System.Diagnostics.Process()
-            With myProcess
-                With .StartInfo
-                    .FileName = FILE 'CREATE THIS FILE WITH FILESHAREMODE.NONE 
-                    .WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
-                    .CreateNoWindow = True
-                    .Verb = "print"
-                    .Arguments = PRN
-                    .UseShellExecute = True
-                End With
-                Dim Print_Check_Counter As Integer = 0
-                Try
-                    .Start() 'GIVE THE PROCESS 2 SECOND TO START 
-                    .WaitForExit(2000)
+            Using myProcess As System.Diagnostics.Process = New System.Diagnostics.Process()
+                With myProcess
+                    With .StartInfo
+                        .FileName = FILENAME 'CREATE THIS FILENAME WITH FILENAMESHAREMODE.NONE 
+                        .WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+                        .CreateNoWindow = True
+                        .Verb = "print"
+                        .Arguments = PRN
+                        .UseShellExecute = True
+                    End With
+                    Dim Print_Check_Counter As Integer = 0
+                    Try
+                        .Start() 'GIVE THE PROCESS 2 SECOND TO START 
+                        .WaitForExit(2000)
 CLOSE:
-                    Print_Check_Counter = Print_Check_Counter + 1
-                    If Print_Check_Counter > 30 Then
-                        'MsgBox.Show("Problem Printing this document: " & paginatedPDF, "Process Error")
-                        Exit Sub
-                    End If
-                    'FILE WAS CREATED WITH FILESHAREMODE.NONE SO IF IT IS STILL BEING USED 'BY ACROBAT OR READER, THEN CATCH AN IO EXCEPTION 
-                    Dim check As New FileStream(FILE, FileMode.Open)
-                    .CloseMainWindow()
+                        Print_Check_Counter = Print_Check_Counter + 1
+                        If Print_Check_Counter > 30 Then
+                            'MsgBox.Show("Problem Printing this document: " & paginatedPDF, "Process Error")
+                            Exit Sub
+                        End If
+                        'FILENAME WAS CREATED WITH FILENAMESHAREMODE.NONE SO IF IT IS STILL BEING USED 'BY ACROBAT OR READER, THEN CATCH AN IO EXCEPTION 
+                        Dim check As New FileStream(FILENAME, FileMode.Open)
+                        .CloseMainWindow()
                     check.Close()
                 Catch io As IOException 'IF IOEXCEPTION WAS CAUGHT THEN SLEEP AND GO BACK TO CLOSE 
                     Thread.Sleep(2000)
